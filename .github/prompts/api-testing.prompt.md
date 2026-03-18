@@ -17,6 +17,36 @@ Your output covers four dimensions in a single, integrated plan:
 
 ---
 
+## CHAIN INPUT — Reading Upstream Tool Output
+
+**If the user references a prior tool's output file using `#file:`, process it before asking any questions.**
+
+When a file is provided, scan it immediately for a `<!-- CHAIN OUTPUT` block. If found:
+
+1. **Extract all fields** from the block:
+   - `source_tool` — tells you whether the upstream was `/risk-analysis`, `/bug-predictor`, or both
+   - `feature`, `platform`, `testing_goal`, `tech_stack`, `user_types`, `known_history`, `key_constraints`
+   - `top_risks` (from risk-analysis) and/or `top_bugs` (from bug-predictor)
+   - `answered_questions`
+
+2. **Skip questions already answered** — do not re-ask what is covered in `answered_questions`. Confirm extracted values in the Readiness Check.
+
+3. **If `source_tool` is `risk-analysis`**:
+   - Map each 🔴 High priority risk to the most relevant API test section (Functional, Security, Contract, or Performance)
+   - Incorporate `top_risks` into Section 6 (Bug Predictions) — each risk becomes a candidate bug hypothesis
+
+4. **If `source_tool` is `bug-predictor`**:
+   - Every `top_bugs` entry with `confidence: High` must appear in Section 6 (Bug Predictions) and be targeted by at least one test idea in the relevant section
+   - Use `root_cause_patterns` to inform Section 8 (Coverage Gaps)
+
+5. **If both tools' outputs are provided**, combine findings — bug predictions take priority over raw risk entries.
+
+6. **Shorten the questioning rounds** to only what is still unknown. If most context is already answered upstream, combine remaining questions into a single message. Do not skip the Readiness Check.
+
+7. **If no CHAIN OUTPUT block is found**, treat the file as supplementary context and run the full questioning protocol.
+
+---
+
 ## STEP 1 — Gather Context
 
 Run the rounds sequentially. Send each round as a separate message and wait for the user's full response before continuing. Do not combine rounds.
@@ -60,9 +90,175 @@ Only begin generating after the user confirms the summary is accurate.
 
 ---
 
+## HTSM REFERENCE — General Test Techniques
+
+Use these when deciding *how* to approach testing each area of the API. Match the most appropriate technique to each section of the test plan output.
+
+#### Function Testing — *Test what it can do*
+1. Identify things that the product can do (functions and subfunctions).
+2. Determine how you'd know if a function was capable of working.
+3. Test each function, one at a time.
+4. See that each function does what it's supposed to do and not what it isn't supposed to do.
+
+#### Claims Testing — *Challenge every claim*
+1. Identify reference materials that include claims about the product — SLAs, EULAs, specifications, help text, manuals, OpenAPI docs.
+2. Analyse individual claims and clarify vague ones.
+3. Test each claim about the product.
+4. If testing from an explicit specification, expect it and the product to be brought into alignment.
+
+#### Domain Testing — *Partition the data*
+1. Look for any data processed by the product — outputs as well as inputs.
+2. Decide which particular data to test with: boundary values, typical values, convenient values, invalid values, or best representatives.
+3. Consider combinations of data worth testing together.
+4. Consider using inputs that force the whole range of possible outputs to occur.
+
+#### User Testing — *Involve the users*
+1. Identify categories and roles of users (API consumers, roles, privilege levels).
+2. Determine what each category of consumer will do, how they will do it, and what they value.
+3. Get real consumer data or logs if possible; otherwise systematically simulate a consumer.
+4. Powerful user testing involves a variety of consumers and roles, not just one.
+
+#### Stress Testing — *Overwhelm the product*
+1. Look for endpoints and functions vulnerable to being overloaded in the presence of challenging data or constrained resources.
+2. Select or generate challenging conditions: large payloads, high request rates, long test runs, low memory conditions.
+
+#### Risk Testing — *Imagine a problem, then look for it*
+1. What kinds of problems could this API have?
+2. Which kinds matter most? Focus on those.
+3. How would you detect them if they were there?
+4. Design tests specifically to reveal them — especially for security and data integrity risks.
+
+#### Flow Testing — *Do one thing after another*
+1. Perform multiple API calls connected end-to-end — e.g. POST → GET → PUT → DELETE.
+2. Don't reset state between calls.
+3. Vary timing and sequencing, and try parallel threads.
+
+#### Scenario Testing — *Test to a compelling story*
+1. Think about the real workflows that consumers drive through this API.
+2. Design tests that involve meaningful and complex call sequences.
+3. A good scenario reflects how a real consumer would use the API end-to-end.
+
+#### Tool-Supported Testing — *Use tools to make testers more powerful*
+1. Consider tools that perform many requests and check many things automatically.
+2. Consider tools that partially automate contract/schema validation.
+3. Consider automatic change detectors and diff tools for response bodies.
+4. Consider automatic test data generators for boundary and combinatorial coverage.
+
+---
+
+## HTSM REFERENCE — Quality Criteria
+
+Use these to populate the **HTSM Area** column in all output sections. Map each test idea to the most precise sub-criterion.
+
+#### Capability
+- **Sufficiency**: the API possesses all capabilities necessary to serve its consumers
+- **Correctness**: it is possible for the API to function as intended and produce acceptable output
+
+#### Reliability
+- **Robustness**: the API continues to function over time without degradation under reasonable conditions
+- **Error Handling**: the API resists failure in the case of bad input, is graceful when it fails, and recovers readily
+- **Data Integrity**: data in the system is protected from loss or corruption
+- **Safety**: the API will not fail in such a way as to harm life or property
+
+#### Usability
+- **Learnability**: the API can be rapidly understood and integrated by its intended consumers
+- **Operability**: the API can be used with minimum effort and friction
+- **Accessibility**: the API meets relevant accessibility and inclusivity standards where applicable
+
+#### Charisma
+- **Aesthetics**: the API design is clean and intuitive
+- **Uniqueness**: the API offers something distinctive in its domain
+- **Image**: the API projects the desired impression of quality and professionalism
+
+#### Security
+- **Authentication**: the ways in which the system verifies that a consumer is who they say they are
+- **Authorisation**: the rights granted to authenticated consumers at varying privilege levels
+- **Privacy**: the ways in which customer or employee data is protected from unauthorised access
+- **Security Holes**: the ways in which the system cannot enforce security (e.g. injection, SSRF, token leakage)
+
+#### Scalability
+How well does the API scale up or down? Consider throughput, concurrent connections, and payload size growth.
+
+#### Compatibility
+- **Application Compatibility**: the API works in conjunction with its consumers (web, mobile, third-party)
+- **Backward Compatibility**: the API works with consumers built against earlier versions of itself
+- **Product Footprint**: the API doesn't consume disproportionate resources (CPU, memory, connections)
+
+#### Performance
+How speedy and responsive is it? Consider response time, throughput, and resource consumption under typical and peak conditions.
+
+#### Installability
+- **Configuration**: deployment and environment configuration correctness
+- **Upgrades/Patches**: can new API versions be deployed without breaking existing consumers?
+
+#### Development
+- **Testability**: how effectively can the API be tested — are there good observability hooks, logs, test environments?
+- **Maintainability**: how economical is it to build, fix, or enhance the API?
+- **Portability**: how economical will it be to deploy the API in different environments?
+
+---
+
+## HTSM REFERENCE — Product Elements
+
+Use these when populating the **HTSM Area** column and when identifying **Coverage Gaps**. Every test idea should map to a Product Element + Quality Criterion.
+
+#### Structure — *Everything that comprises the physical product*
+- **Code**: the code structures that comprise the API, from services to individual handlers and routines
+- **Service**: any server or process running independently that may comprise the API (microservices, gateways, workers)
+- **Non-executable files**: configuration files, OpenAPI specs, environment files, seed data
+- **Collateral**: API documentation, developer portals, license agreements, SLAs
+
+#### Function — *Everything that the product does*
+- **Multi-user/Social**: concurrent access by multiple consumers to shared resources
+- **Calculation**: arithmetic operations or transformations performed by the API
+- **Time-related**: time-out settings, rate limit windows, token expiry, scheduled jobs, time zone handling
+- **Security-related**: rights enforcement, encryption, authentication and authorisation logic
+- **Transformations**: data modification, format conversion, state changes performed by the API
+- **Startup/Shutdown**: initialisation behaviour, graceful shutdown, connection draining
+- **Error Handling**: error detection, error response format, recovery behaviour, error logging
+- **Interactions**: interactions between endpoints — e.g. does creating a resource affect other endpoints?
+- **Testability**: health check endpoints, debug headers, logging, diagnostic endpoints
+
+#### Data — *Everything that the product processes and produces*
+- **Input/Output**: request bodies, query parameters, path parameters, response bodies and headers
+- **Preset**: default field values, seed data, configuration defaults built into the API
+- **Persistent**: data stored in databases or caches that must be correct across multiple requests
+- **Interdependent/Interacting**: fields or resources whose values affect each other or jointly determine an output
+- **Sequences/Combinations**: ordered multi-step call sequences; combinations of request parameters
+- **Cardinality**: zero, one, many, max number of resources — pagination, empty collections, single items
+- **Big/Little**: very large request payloads, deeply nested JSON, very long string values
+- **Invalid/Noise**: malformed JSON, unexpected content types, missing required fields, injection payloads
+- **Lifecycle**: create → read → update → delete lifecycle of resources through the API
+
+#### Interfaces — *Every conduit by which the product is accessed or expressed*
+- **System Interfaces**: interfaces with databases, message queues, caches, external services, the OS
+- **API/SDK**: the API's own programmatic interface — endpoints, schemas, versioning, SDKs
+- **Import/Export**: any functions that accept data from or produce data for external systems
+
+#### Platform — *Everything the product depends on that is outside your project*
+- **External Hardware**: cloud infrastructure, server configurations, load balancers
+- **External Software**: OS, runtime (Node, JVM, etc.), web server, proxy layers, third-party services
+- **Embedded Components**: libraries, frameworks, and ORMs embedded in the API
+- **Product Footprint**: memory, database connections, file handles consumed by the API
+
+#### Operations — *How the product will be used*
+- **Users**: attributes of the various consumer types — their roles, integration patterns, trust levels
+- **Environment**: network conditions, geographic distribution, latency profiles
+- **Common Use**: typical call patterns and sequences a consumer makes
+- **Disfavoured Use**: misuse, abuse, accidental misuse — wrong call order, invalid parameters, hammering endpoints
+- **Extreme Use**: high-volume legitimate use cases that stress the API
+
+#### Time — *Any relationship between the product and time*
+- **Input/Output**: when requests arrive and when responses are returned; timeout behaviour
+- **Fast/Slow**: very fast or very slow consumers; fastest and slowest response paths
+- **Changing Rates**: traffic spikes, burst patterns, throttling behaviour, rate limiting response
+- **Concurrency**: concurrent requests to the same resource; shared state; race conditions
+
+---
+
 ## STEP 2 — Analyse the API Through HTSM Lenses
 
-Before generating output, reason through the following HTSM-grounded dimensions. Use this analysis to inform priorities and depth of coverage in your output.
+Before generating output, reason through the following dimensions using the HTSM references above. Use this analysis to inform priorities and depth of coverage in your output.
 
 ### A. Function — What should the API do, and how could it do it wrong?
 - Does each endpoint perform its stated function correctly?
@@ -230,6 +426,44 @@ Note any areas where:
 - Testing is blocked by environment or tooling constraints
 - Assumptions were made that the user should verify
 - Areas that are out of scope but worth flagging for awareness
+
+---
+
+#### 🔗 Section 9: Chain Output
+
+Always close the test plan with the following block **exactly as formatted**. This block is machine-readable and can be passed forward to `/bug-predictor` or `/test-ideas` if deeper investigation is needed on specific areas.
+
+~~~
+<!-- CHAIN OUTPUT
+source_tool: api-testing
+api_name: [API or endpoint name]
+platform: [Platform — e.g. REST API, GraphQL]
+testing_goal: [Testing goal stated by tester]
+tech_stack: [Languages, frameworks, libraries, DBs — carry forward or from context]
+auth_model: [Authentication mechanism used]
+user_roles: [User roles and permission levels]
+key_constraints: [Testing constraints — carry forward or from context]
+
+upstream_risks: [Risk IDs from upstream risk-analysis, or "none provided"]
+upstream_bugs: [Bug IDs from upstream bug-predictor, or "none provided"]
+
+endpoints_covered:
+  - [METHOD /path] | happy_path: ✅/❌ | negative: ✅/❌ | security: ✅/❌ | contract: ✅/❌
+
+top_security_concerns:
+  S1: [Specific security concern] | htsm_area: Security > [Sub-criterion] | priority: 🔴/🟡/🟢
+  S2: [Specific security concern] | htsm_area: Security > [Sub-criterion] | priority: 🔴/🟡/🟢
+
+coverage_gaps: [Untested endpoints, product elements, or quality criteria — or "none identified"]
+answered_questions: [api_name, platform, testing_goal, tech_stack, auth_model, user_roles, key_constraints]
+recommended_next_tool: /bug-predictor (for deeper hypothesis investigation) or session complete
+-->
+~~~
+
+**Rules for this block:**
+- Always include it, even for partial sessions.
+- `endpoints_covered` uses ✅ when the category was tested and ❌ when it was not.
+- `top_security_concerns` lists only the most critical — not a full repeat of Section 3.
 
 ---
 

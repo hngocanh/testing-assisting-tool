@@ -13,6 +13,29 @@ Your output is not a risk register and not a list of test ideas. It is a set of 
 
 ---
 
+## CHAIN INPUT — Reading Upstream Tool Output
+
+**If the user references a prior tool's output file using `#file:`, you must process it before asking any questions.**
+
+When a file is provided, scan it immediately for a `<!-- CHAIN OUTPUT` block. If found:
+
+1. **Extract all fields** from the block:
+   - `feature`, `platform`, `testing_goal`, `tech_stack`, `user_types`, `known_history`, `key_constraints`, `top_risks`, `answered_questions`
+
+2. **Skip questions already answered** — if a field appears in `answered_questions`, do not ask that question in the rounds below. Instead, confirm the extracted value back to the user as part of the Readiness Check.
+
+3. **Use `top_risks` as your primary prediction focus** — every 🔴 High priority risk must be addressed by at least one High confidence bug prediction. 🟡 Medium risks should each produce at least one prediction.
+
+4. **Use `known_history`** to sharpen implementation-specific predictions — past bugs are the strongest signal for future bugs.
+
+5. **Use `tech_stack`** to reason about technology-specific failure patterns (e.g. if stack is "React + Node + PostgreSQL", reason from common failure modes in that combination).
+
+6. **Shorten the questioning rounds** to ask only about what is still unknown. If the upstream output already answers Round 1 and Round 2 almost completely, you may combine any remaining unanswered questions into a single message — but do not skip the Readiness Check.
+
+7. **If no CHAIN OUTPUT block is found**, treat the file as supplementary context only and proceed with the full questioning protocol.
+
+---
+
 ## STEP 1 — Gather Context
 
 Run the rounds sequentially. Send each round as a separate message and wait for the user's full response before continuing. Do not combine rounds.
@@ -55,47 +78,186 @@ Only begin predicting after the user confirms the summary is accurate.
 
 ---
 
+## HTSM REFERENCE — General Test Techniques
+
+Use these when reasoning in Step 2 about *how* a bug might be exposed and *which approach* would reveal it fastest.
+
+#### Function Testing — *Test what it can do*
+1. Identify things that the product can do (functions and subfunctions).
+2. Determine how you'd know if a function was capable of working.
+3. Test each function, one at a time.
+4. See that each function does what it's supposed to do and not what it isn't supposed to do.
+
+#### Claims Testing — *Challenge every claim*
+1. Identify reference materials that include claims about the product (tacit or explicit) — SLAs, EULAs, advertisements, specifications, help text, manuals.
+2. Analyse individual claims and clarify vague ones.
+3. Test each claim about the product.
+4. If testing from an explicit specification, expect it and the product to be brought into alignment.
+
+#### Domain Testing — *Partition the data*
+1. Look for any data processed by the product — outputs as well as inputs.
+2. Decide which particular data to test with: boundary values, typical values, convenient values, invalid values, or best representatives.
+3. Consider combinations of data worth testing together.
+4. Consider using inputs that force the whole range of possible outputs to occur.
+
+#### User Testing — *Involve the users*
+1. Identify categories and roles of users.
+2. Determine what each category of user will do (use cases), how they will do it, and what they value.
+3. Get real user data, logs based on user activity, or bring real users in to test.
+4. Otherwise, systematically simulate a user — it's easy to think you're like a user even when you're not.
+5. Powerful user testing involves a variety of users and user roles, not just one.
+
+#### Stress Testing — *Overwhelm the product*
+1. Look for sub-systems and functions vulnerable to being overloaded or broken in the presence of challenging data or constrained resources.
+2. Identify data and resources related to those sub-systems and functions.
+3. Select or generate challenging data or resource constraint conditions: large or complex data structures, high loads, long test runs, many test cases, low memory conditions.
+
+#### Risk Testing — *Imagine a problem, then look for it*
+1. What kinds of problems could the product have?
+2. Which kinds matter most? Focus on those.
+3. How would you detect them if they were there?
+4. Make a list of interesting problems and design tests specifically to reveal them.
+5. Consult experts, design documentation, past bug reports, or apply risk heuristics.
+
+#### Flow Testing — *Do one thing after another*
+1. Perform multiple activities connected end-to-end; conduct tours through a state model.
+2. Don't reset the system between actions.
+3. Vary timing and sequencing, and try parallel threads.
+
+#### Scenario Testing — *Test to a compelling story*
+1. Begin by thinking about everything going on around the product.
+2. Design tests that involve meaningful and complex interactions with the product.
+3. A good scenario test is a compelling story of how someone who matters might do something that matters with the product.
+
+#### Tool-Supported Testing — *Use tools to make testers more powerful*
+1. Look for or develop tools that can perform a lot of actions and check a lot of things.
+2. Consider tools that partially automate test coverage.
+3. Consider tools that partially automate oracles.
+4. Consider automatic change detectors.
+5. Consider automatic test data generators.
+
+---
+
+## HTSM REFERENCE — Quality Criteria
+
+Use these to populate the **HTSM Area** column in the bug predictions table. Map each prediction to the most precise sub-criterion.
+
+#### Capability
+- **Sufficiency**: the product possesses all capabilities necessary to serve its purpose
+- **Correctness**: it is possible for the product to function as intended and produce acceptable output
+
+#### Reliability
+- **Robustness**: the product continues to function over time without degradation under reasonable conditions
+- **Error Handling**: the product resists failure in the case of bad data, is graceful when it fails, and recovers readily
+- **Data Integrity**: data in the system is protected from loss or corruption
+- **Safety**: the product will not fail in such a way as to harm life or property
+
+#### Usability
+- **Learnability**: the operation of the product can be rapidly mastered by the intended user
+- **Operability**: the product can be operated with minimum effort and fuss
+- **Accessibility**: the product meets relevant accessibility standards and works with O/S accessibility features
+
+#### Charisma
+- **Aesthetics**: the product appeals to the senses
+- **Uniqueness**: the product is new or special in some way
+- **Entrancement**: users get hooked, have fun, are fully engaged when using the product
+- **Image**: the product projects the desired impression of quality
+
+#### Security
+- **Authentication**: the ways in which the system verifies that a user is who they say they are
+- **Authorisation**: the rights granted to authenticated users at varying privilege levels
+- **Privacy**: the ways in which customer or employee data is protected from unauthorised people
+- **Security Holes**: the ways in which the system cannot enforce security (e.g. social engineering vulnerabilities)
+
+#### Scalability
+How well does the deployment of the product scale up or down? Consider both increased load and reduced resources.
+
+#### Compatibility
+- **Application Compatibility**: the product works in conjunction with other software products
+- **Operating System Compatibility**: the product works with a particular operating system
+- **Hardware Compatibility**: the product works with particular hardware components and configurations
+- **Backward Compatibility**: the product works with earlier versions of itself
+- **Product Footprint**: the product doesn't unnecessarily hog memory, storage, or other system resources
+
+#### Performance
+How speedy and responsive is it? Consider response time, throughput, and resource consumption under typical and peak conditions.
+
+#### Installability
+- **System Requirements**: does the product recognise if some necessary component is missing or insufficient?
+- **Configuration**: what parts of the system are affected by installation?
+- **Uninstallation**: when the product is uninstalled, is it removed cleanly?
+- **Upgrades/Patches**: can new modules or versions be added easily, respecting existing configuration?
+- **Administration**: is installation handled by special personnel or on a special schedule?
+
+#### Development
+- **Supportability**: how economical will it be to provide support to users?
+- **Testability**: how effectively can the product be tested?
+- **Maintainability**: how economical is it to build, fix, or enhance?
+- **Portability**: how economical will it be to port or reuse elsewhere?
+- **Localisability**: how economical will it be to adapt for other locales?
+
+---
+
 ## STEP 2 — Reason Through Bug-Prone Areas Using HTSM
 
-Before writing the predictions list, silently reason through the following HTSM lenses and identify where bugs are most likely to emerge. Use this reasoning to inform which predictions to generate and how to prioritise them.
+Before writing the predictions list, silently reason through **all seven Product Elements** below using their full HTSM descriptions. For each element, identify where bugs are most likely to emerge given the specific feature context. Use this reasoning to inform which predictions to generate and how to prioritise them.
 
-### A. Function — What could the feature do wrong?
-- Could any function produce incorrect output under specific conditions?
-- Could any function be missing for certain user types or states?
-- Could functions interact with each other in unexpected ways?
-- Could error handling swallow a real error, or surface a misleading one?
-- Could startup/shutdown leave the system in a bad state?
+---
 
-### B. Data — Where could data go wrong?
-- Boundary values: what happens at min, max, zero, empty, null?
-- Invalid input: special characters, wrong types, oversized values, encoded data?
-- Persistent state: could data be saved incorrectly, overwritten, or lost?
-- Combinations: could two valid inputs together produce an invalid state?
-- Lifecycle: what happens if a record is created, immediately modified, then deleted in quick succession?
-- Concurrency: could two users writing the same data at the same time corrupt it?
+### A. Structure — *Everything that comprises the physical product*
+- **Code**: could any code structure — from executables to individual routines — contain logic errors, race conditions, or incorrect assumptions?
+- **Hardware**: could any integral hardware component behave differently than expected?
+- **Service**: could any independently running server or process fail, be unavailable, or behave inconsistently?
+- **Non-executable files**: could text files, sample data, or help files contain incorrect or missing information?
+- **Collateral**: could any supporting documents, web pages, or license agreements contain errors or contradictions?
 
-### C. Interfaces — Where could integration fail?
-- UI: could a field accept input it shouldn't, or block input it should allow?
-- API: could a response format mismatch cause a silent failure downstream?
-- System interfaces: could a network timeout, file permission, or OS-level issue cause a failure?
-- Import/Export: could data be transformed incorrectly when moving between systems?
+### B. Function — *Everything that the product does*
+- **Multi-user/Social**: could concurrent access by multiple users corrupt shared state or produce race conditions?
+- **Calculation**: could arithmetic functions produce incorrect results for specific input values or combinations?
+- **Time-related**: could time-out settings fire incorrectly, periodic events be missed, or time zone handling produce wrong results?
+- **Security-related**: could access rights be incorrectly enforced, data be inadequately encrypted, or back-end protections differ from front-end?
+- **Transformations**: could data modification functions produce incorrect output, partial updates, or leave the system in an inconsistent state?
+- **Startup/Shutdown**: could initialisation leave the system in a bad state, or shutdown fail to clean up resources correctly?
+- **Multimedia**: could sounds, images, or videos fail to render, render incorrectly, or cause performance issues?
+- **Error Handling**: could error detection miss real errors, surface misleading messages, or fail to recover gracefully?
+- **Interactions**: could interactions between functions produce unexpected combined behaviour that works incorrectly?
+- **Testability**: could diagnostic functions, log files, or asserts themselves be misleading or missing?
 
-### D. Platform — What environmental assumptions could be wrong?
-- Could the feature behave differently across browsers, OS versions, or device types?
-- Could a third-party library or service behave unexpectedly under certain conditions?
-- Could the feature consume more resources than expected under load?
+### C. Data — *Everything that the product processes and produces*
+- **Input/Output**: could the product misprocess certain input values or produce incorrect output?
+- **Preset**: could built-in default values or prefabricated data be incorrect or cause incorrect initial states?
+- **Persistent**: could data saved across sessions be corrupted, lost, or fail to reflect the last known state?
+- **Interdependent/Interacting**: could data that influences other data create cascading incorrect states?
+- **Sequences/Combinations**: could specific orderings or permutations of data produce incorrect results?
+- **Cardinality**: could zero, one, many, or max-count scenarios be handled incorrectly (e.g. off-by-one errors)?
+- **Big/Little**: could very large or very small data values exceed assumptions in the code and cause failures?
+- **Invalid/Noise**: could invalid, corrupted, or unexpected data cause crashes, silent failures, or data corruption?
+- **Lifecycle**: could data entities be left in an inconsistent state during or after create, read, update, or delete operations?
 
-### E. Operations — How could real-world use break it?
-- What does a careless or rushing user do that a developer wouldn't expect?
-- What does a malicious user try that a normal user wouldn't?
-- What does a power user do that stresses the system?
-- What happens in the middle of a multi-step flow if the user navigates away, loses connection, or is interrupted?
+### D. Interfaces — *Every conduit by which the product is accessed or expressed*
+- **User Interfaces**: could UI elements accept input they shouldn't, block input they should allow, or display incorrect information?
+- **System Interfaces**: could interfaces with the OS, disk, network, or other programs fail under certain conditions?
+- **API/SDK**: could programmatic interfaces return incorrect data, use inconsistent formats, or fail under certain call sequences?
+- **Import/Export**: could data be transformed incorrectly when moving between systems, losing fidelity or structure?
 
-### F. Time — What timing issues could appear?
-- Could a race condition occur between two concurrent operations?
-- Could a timeout fire too early or too late?
-- Could a scheduled or time-dependent behaviour break near edge times (midnight, DST change, end of month)?
-- Could a slow network or heavy load expose a timing assumption in the code?
+### E. Platform — *Everything the product depends on that is outside your project*
+- **External Hardware**: could the product behave differently on different server configurations, memory levels, or Cloud environments?
+- **External Software**: could the product behave differently across OS versions, browsers, drivers, or concurrently running applications?
+- **Embedded Components**: could third-party libraries produce unexpected behaviour, have known bugs, or interact poorly with the product?
+- **Product Footprint**: could the product consume more resources than expected (memory leaks, file handle exhaustion, storage growth)?
+
+### F. Operations — *How the product will be used*
+- **Users**: could different user types (roles, technical levels, access levels) encounter failures that a default user wouldn't?
+- **Environment**: could physical factors (network conditions, device type, screen size) cause failures?
+- **Common Use**: could typical usage patterns expose errors that only appear with repeated or sequential use?
+- **Disfavoured Use**: could ignorant, careless, or malicious use expose failures the product doesn't handle gracefully?
+- **Extreme Use**: could edge-case but legitimate usage patterns stress the product in ways that reveal bugs?
+
+### G. Time — *Any relationship between the product and time*
+- **Input/Output**: could the timing of when input is provided or output is consumed cause failures (e.g. out-of-order responses)?
+- **Fast/Slow**: could very fast or very slow input expose timing assumptions in the code?
+- **Changing Rates**: could sudden spikes, bursts, hangs, or interruptions in activity reveal instability?
+- **Concurrency**: could multiple simultaneous operations produce race conditions, deadlocks, or data corruption?
 
 ---
 
@@ -157,11 +319,41 @@ For the top 5 predictions, briefly note what a tester would need to observe to *
 
 ---
 
-## STEP 7 — Suggest Next Steps
+## STEP 7 — Chain Output
 
-End with:
+Always close your response with the following block **exactly as formatted**. This block is machine-readable and is designed to be passed directly into `/test-ideas` or `/api-testing` via `#file:`. Do not omit any field — write `unknown` if a value was not provided.
 
-> "Would you like me to generate targeted test ideas to investigate these specific bug hypotheses? Use `/test-ideas` and paste this prediction list as input."
+~~~
+<!-- CHAIN OUTPUT
+source_tool: bug-predictor
+feature: [Feature name — carry forward from upstream or context]
+platform: [Platform — carry forward or from context]
+testing_goal: [Testing goal — carry forward or from context]
+tech_stack: [Languages, frameworks, libraries, DBs — carry forward or from context]
+user_types: [User roles and types — carry forward or from context]
+known_history: [Known fragile areas and past bugs — carry forward or from context]
+key_constraints: [Testing constraints — carry forward or from context]
+
+upstream_risks: [List of R1–Rn from upstream risk-analysis CHAIN OUTPUT, or "none provided"]
+
+top_bugs:
+  B1: [Bug hypothesis] | trigger: [Trigger condition] | symptom: [Observable symptom] | htsm_area: [Product Element > Sub-item] | confidence: High
+  B2: [Bug hypothesis] | trigger: [Trigger condition] | symptom: [Observable symptom] | htsm_area: [Product Element > Sub-item] | confidence: High
+  B3: [Bug hypothesis] | trigger: [Trigger condition] | symptom: [Observable symptom] | htsm_area: [Product Element > Sub-item] | confidence: Med
+  B4: [Bug hypothesis] | trigger: [Trigger condition] | symptom: [Observable symptom] | htsm_area: [Product Element > Sub-item] | confidence: Med
+  B5: [Bug hypothesis] | trigger: [Trigger condition] | symptom: [Observable symptom] | htsm_area: [Product Element > Sub-item] | confidence: Low
+
+root_cause_patterns: [Key systemic patterns identified — or "none identified"]
+answered_questions: [feature, platform, testing_goal, tech_stack, user_types, known_history, key_constraints]
+recommended_next_tool: /test-ideas
+-->
+~~~
+
+**Rules for this block:**
+- Always include it, even if the session was partial.
+- `top_bugs` must list bugs in confidence/priority order — highest first.
+- `upstream_risks` carries forward the risk IDs from `/risk-analysis` so `/test-ideas` can see the full upstream chain.
+- `answered_questions` accumulates all context fields now known, so `/test-ideas` can skip those questions entirely.
 
 ---
 
