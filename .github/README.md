@@ -50,6 +50,7 @@ your-project/
 | `bug-predictor.prompt.md` | `/bug-predictor` | Generate specific, falsifiable bug hypotheses |
 | `test-ideas.prompt.md` | `/test-ideas` | Generate a prioritised, technique-grounded list of test ideas |
 | `api-testing.prompt.md` | `/api-testing` | Full API test plan covering functional, security, contract, and performance |
+| `test-plan.prompt.md` | `/test-plan` | Consolidate all session outputs into one clean, shareable testing brief |
 
 ---
 
@@ -68,14 +69,14 @@ All output from every tool is labelled with the HTSM dimension it comes from, so
 
 ## How Each Tool Works
 
-### Base Assistant — `copilot-instructions.md`
+### 🔵 Base Assistant — `copilot-instructions.md`
 
 **Always active.** No invocation needed — it loads automatically in every Copilot Chat session.
 
 **What it does:**
 - Answers general testing questions grounded in HTSM
 - Analyses features and requirements using Product Elements and Quality Criteria
-- Guides you through test strategy at any stage of a project
+- Guides you through test planning at any stage of a project
 - Suggests which prompt tool to use for deeper work
 
 **Mandatory workflow:**
@@ -90,7 +91,7 @@ A **Readiness Check** summarises understanding before analysis begins. This cann
 
 ---
 
-### Risk Analysis — `risk-analysis.prompt.md`
+### 🔴 Risk Analysis — `risk-analysis.prompt.md`
 
 **Invoke with:** `/risk-analysis`
 
@@ -113,7 +114,7 @@ Systematically analyses a feature or product area for risks *before* testing beg
 
 ---
 
-### Bug Predictor — `bug-predictor.prompt.md`
+### 🐛 Bug Predictor — `bug-predictor.prompt.md`
 
 **Invoke with:** `/bug-predictor` or `/bug-predictor #file:.testing/risk-[feature].md`
 
@@ -209,7 +210,39 @@ Produces a comprehensive, multi-section API test plan covering all four critical
 
 ---
 
-## The Questioning Protocol — Why It Matters
+### 📄 Session Report — `test-plan.prompt.md`
+
+**Invoke with:** `/test-plan #file:.testing/risk-[feature].md #file:.testing/bugs-[feature].md #file:.testing/tests-[feature].md`
+
+**What it does:**
+Reads all prior session files and consolidates everything into a single, clean testing brief. It does not perform new analysis — it synthesises and summarises what was already established across the chain. The output is a structured plain-text document designed to be saved, shared with the team, attached to a ticket, or referenced during test execution.
+
+**Output — one clean document with these sections:**
+
+| Section | Contents |
+|---|---|
+| Overview | 2–3 sentence product description + platform, tech stack, users, goal, constraints, history |
+| Product Elements in Scope | Only elements that appear in actual findings — one line each, product-specific |
+| Quality Criteria in Scope | Only criteria that appear in actual findings — one line each, product-specific |
+| Risks | Full list from risk-analysis, ordered by priority, two lines each |
+| Predicted Bugs | Full list from bug-predictor, ordered by confidence, with trigger and symptom |
+| Test Ideas | Full list from test-ideas, ordered by priority, with technique and execution mode |
+| Coverage Gaps | Untested areas identified across all sessions |
+| Traceability | Risk → Bug → Test lineage threads (only if full chain was run) |
+| Notes | Any additional tester observations |
+
+**Design principles:**
+- No markdown tables — indented lists and plain text only
+- No HTSM definitions or framework explanations in the output
+- Sections are omitted entirely if there is nothing to put in them
+- Every finding is two lines maximum — no paragraphs in lists
+- Product Elements and Quality Criteria are filtered to only what appeared in findings — never the full HTSM list
+
+**Minimal questions:** After reading all session files, it asks only for what's missing — typically just tester name and date. Everything else comes from the CHAIN OUTPUT blocks.
+
+**Use it as the final step** in any chain, once all analysis and test idea sessions are complete.
+
+---
 
 Every tool enforces a **mandatory three-round questioning protocol** before generating any output. This is the single most important design decision in the toolkit.
 
@@ -312,6 +345,7 @@ Then reference them in Copilot Chat:
 | Testing an API | `/api-testing` |
 | Ad-hoc question or general guidance | Base assistant (no command) |
 | Have a risk analysis, need an API test plan | `/api-testing #file:risk-[x].md` |
+| Sessions done — need a clean summary document | `/test-plan #file:[all session files]` |
 
 ### HTSM at a glance
 
@@ -321,7 +355,7 @@ Then reference them in Copilot Chat:
 
 **10 Quality Criteria:** Capability · Reliability · Usability · Security · Performance · Scalability · Compatibility · Installability · Charisma · Development
 
-**8 Project Environment areas:** Mission · Information · Developer Relations · Test Team · Equipment & Tools · Schedule · Test Items · Deliverables
+**4 Project Environment areas:** Mission · Information · Developer Relations · Test Team · Equipment & Tools · Schedule · Test Items · Deliverables
 
 ---
 
@@ -334,6 +368,7 @@ Then reference them in Copilot Chat:
 | `prompts/bug-predictor.prompt.md` | Bug hypothesis generator | `/bug-predictor` |
 | `prompts/test-ideas.prompt.md` | Test idea generator | `/test-ideas` |
 | `prompts/api-testing.prompt.md` | API test plan generator | `/api-testing` |
+| `prompts/test-plan.prompt.md` | Testing brief generator | `/test-plan` |
 | `WORKFLOW.md` | Chaining guide, step-by-step instructions | You |
 | `README.md` | This file — overview and reference | You and your team |
 
@@ -342,3 +377,4 @@ Then reference them in Copilot Chat:
 ## Attribution
 
 This toolkit is grounded in the **Heuristic Test Strategy Model (HTSM)** by James Bach, version 6.0 (2024).
+Original model: [www.satisfice.com](https://www.satisfice.com) · Copyright 1996–2024 Satisfice, Inc.

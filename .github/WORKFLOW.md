@@ -13,6 +13,7 @@ This guide explains how to use the HTSM-grounded testing toolkit in VS Code with
 | `/bug-predictor` | `prompts/bug-predictor.prompt.md` | Generate specific, falsifiable bug hypotheses |
 | `/test-ideas` | `prompts/test-ideas.prompt.md` | Generate a prioritised, technique-grounded list of test ideas |
 | `/api-testing` | `prompts/api-testing.prompt.md` | Full API test plan covering functional, security, contract, and performance |
+| `/test-plan` | `prompts/test-plan.prompt.md` | Consolidate all session outputs into one clean testing brief |
 
 ---
 
@@ -32,6 +33,10 @@ This guide explains how to use the HTSM-grounded testing toolkit in VS Code with
 /test-ideas  ◄── #file:bugs-[feature].md
       │
       │  save output as: tests-[feature].md
+      ▼
+/test-plan  ◄── #file:risk-[feature].md #file:bugs-[feature].md #file:tests-[feature].md
+      │
+      │  save output as: brief-[feature].txt
       ▼
     Execute
 ```
@@ -238,3 +243,4 @@ The `.testing/` folder is a suggestion — you can name it anything. The importa
 | Testing an API specifically | `/api-testing` |
 | Ad-hoc question, quick help, general guidance | Base assistant (no command) |
 | Have a risk analysis, need an API test plan | `/api-testing #file:risk-[x].md` |
+| Sessions done, need a clean summary document | `/test-plan #file:[all session files]` |
