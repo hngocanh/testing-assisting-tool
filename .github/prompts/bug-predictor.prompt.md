@@ -15,7 +15,7 @@ Your output is not a risk register and not a list of test ideas. It is a set of 
 
 ## CHAIN INPUT — Reading Upstream Tool Output
 
-**If the user references a prior tool's output file using `#file:`, you must process it before asking any questions.**
+**If the user references a prior tool's output file** (`#file:` in Copilot, `@path` or a file path argument in Claude Code), **you must process it before asking any questions.**
 
 When a file is provided, scan it immediately for a `<!-- CHAIN OUTPUT` block. If found:
 
@@ -55,7 +55,7 @@ Run the rounds sequentially. Send each round as a separate message and wait for 
 6. What does it output or change? (UI state, database records, API responses, files, etc.)
 7. What other systems, services, APIs, or components does it depend on or interact with?
 8. Is this a new feature, a modification to an existing one, or a refactor?
-9. Are there specs, user stories, acceptance criteria, or code available? Paste them or use `#file:` to reference them. The more detail here, the more specific the bug predictions will be.
+9. Are there specs, user stories, acceptance criteria, or code available? Paste them or reference the file (`#file:` in Copilot, `@path` or a file path argument in Claude Code). The more detail here, the more specific the bug predictions will be.
 
 ---
 
@@ -65,7 +65,7 @@ Run the rounds sequentially. Send each round as a separate message and wait for 
 12. Has anything recently changed in the codebase that could affect this feature? (refactors, dependency upgrades, config changes)
 13. What would the worst realistic bug look like in production — what's the highest-stakes failure mode?
 14. Are there any user behaviours, edge cases, or usage patterns you're already suspicious of?
-15. Is there a risk analysis or test ideas document already done for this feature? If so, paste it or use `#file:` — this will sharpen the predictions.
+15. Is there a risk analysis or test ideas document already done for this feature? If so, paste it or reference the file (`#file:` in Copilot, `@path` or a file path argument in Claude Code) — this will sharpen the predictions.
 
 ---
 
@@ -78,129 +78,22 @@ Only begin predicting after the user confirms the summary is accurate.
 
 ---
 
-## HTSM REFERENCE — General Test Techniques
+## HTSM REFERENCE
 
-Use these when reasoning in Step 2 about *how* a bug might be exposed and *which approach* would reveal it fastest.
+Before generating predictions, read these shared reference files in full (Read tool in Claude Code; `#file:` or `@` in Copilot):
 
-#### Function Testing — *Test what it can do*
-1. Identify things that the product can do (functions and subfunctions).
-2. Determine how you'd know if a function was capable of working.
-3. Test each function, one at a time.
-4. See that each function does what it's supposed to do and not what it isn't supposed to do.
+- `.github/htsm/test-techniques.md` — for reasoning about *how* a bug might be exposed and *which approach* would reveal it fastest
+- `.github/htsm/quality-criteria.md` — for populating the **HTSM Area** column (use the most precise sub-criterion)
 
-#### Claims Testing — *Challenge every claim*
-1. Identify reference materials that include claims about the product (tacit or explicit) — SLAs, EULAs, advertisements, specifications, help text, manuals.
-2. Analyse individual claims and clarify vague ones.
-3. Test each claim about the product.
-4. If testing from an explicit specification, expect it and the product to be brought into alignment.
-
-#### Domain Testing — *Partition the data*
-1. Look for any data processed by the product — outputs as well as inputs.
-2. Decide which particular data to test with: boundary values, typical values, convenient values, invalid values, or best representatives.
-3. Consider combinations of data worth testing together.
-4. Consider using inputs that force the whole range of possible outputs to occur.
-
-#### User Testing — *Involve the users*
-1. Identify categories and roles of users.
-2. Determine what each category of user will do (use cases), how they will do it, and what they value.
-3. Get real user data, logs based on user activity, or bring real users in to test.
-4. Otherwise, systematically simulate a user — it's easy to think you're like a user even when you're not.
-5. Powerful user testing involves a variety of users and user roles, not just one.
-
-#### Stress Testing — *Overwhelm the product*
-1. Look for sub-systems and functions vulnerable to being overloaded or broken in the presence of challenging data or constrained resources.
-2. Identify data and resources related to those sub-systems and functions.
-3. Select or generate challenging data or resource constraint conditions: large or complex data structures, high loads, long test runs, many test cases, low memory conditions.
-
-#### Risk Testing — *Imagine a problem, then look for it*
-1. What kinds of problems could the product have?
-2. Which kinds matter most? Focus on those.
-3. How would you detect them if they were there?
-4. Make a list of interesting problems and design tests specifically to reveal them.
-5. Consult experts, design documentation, past bug reports, or apply risk heuristics.
-
-#### Flow Testing — *Do one thing after another*
-1. Perform multiple activities connected end-to-end; conduct tours through a state model.
-2. Don't reset the system between actions.
-3. Vary timing and sequencing, and try parallel threads.
-
-#### Scenario Testing — *Test to a compelling story*
-1. Begin by thinking about everything going on around the product.
-2. Design tests that involve meaningful and complex interactions with the product.
-3. A good scenario test is a compelling story of how someone who matters might do something that matters with the product.
-
-#### Tool-Supported Testing — *Use tools to make testers more powerful*
-1. Look for or develop tools that can perform a lot of actions and check a lot of things.
-2. Consider tools that partially automate test coverage.
-3. Consider tools that partially automate oracles.
-4. Consider automatic change detectors.
-5. Consider automatic test data generators.
-
----
-
-## HTSM REFERENCE — Quality Criteria
-
-Use these to populate the **HTSM Area** column in the bug predictions table. Map each prediction to the most precise sub-criterion.
-
-#### Capability
-- **Sufficiency**: the product possesses all capabilities necessary to serve its purpose
-- **Correctness**: it is possible for the product to function as intended and produce acceptable output
-
-#### Reliability
-- **Robustness**: the product continues to function over time without degradation under reasonable conditions
-- **Error Handling**: the product resists failure in the case of bad data, is graceful when it fails, and recovers readily
-- **Data Integrity**: data in the system is protected from loss or corruption
-- **Safety**: the product will not fail in such a way as to harm life or property
-
-#### Usability
-- **Learnability**: the operation of the product can be rapidly mastered by the intended user
-- **Operability**: the product can be operated with minimum effort and fuss
-- **Accessibility**: the product meets relevant accessibility standards and works with O/S accessibility features
-
-#### Charisma
-- **Aesthetics**: the product appeals to the senses
-- **Uniqueness**: the product is new or special in some way
-- **Entrancement**: users get hooked, have fun, are fully engaged when using the product
-- **Image**: the product projects the desired impression of quality
-
-#### Security
-- **Authentication**: the ways in which the system verifies that a user is who they say they are
-- **Authorisation**: the rights granted to authenticated users at varying privilege levels
-- **Privacy**: the ways in which customer or employee data is protected from unauthorised people
-- **Security Holes**: the ways in which the system cannot enforce security (e.g. social engineering vulnerabilities)
-
-#### Scalability
-How well does the deployment of the product scale up or down? Consider both increased load and reduced resources.
-
-#### Compatibility
-- **Application Compatibility**: the product works in conjunction with other software products
-- **Operating System Compatibility**: the product works with a particular operating system
-- **Hardware Compatibility**: the product works with particular hardware components and configurations
-- **Backward Compatibility**: the product works with earlier versions of itself
-- **Product Footprint**: the product doesn't unnecessarily hog memory, storage, or other system resources
-
-#### Performance
-How speedy and responsive is it? Consider response time, throughput, and resource consumption under typical and peak conditions.
-
-#### Installability
-- **System Requirements**: does the product recognise if some necessary component is missing or insufficient?
-- **Configuration**: what parts of the system are affected by installation?
-- **Uninstallation**: when the product is uninstalled, is it removed cleanly?
-- **Upgrades/Patches**: can new modules or versions be added easily, respecting existing configuration?
-- **Administration**: is installation handled by special personnel or on a special schedule?
-
-#### Development
-- **Supportability**: how economical will it be to provide support to users?
-- **Testability**: how effectively can the product be tested?
-- **Maintainability**: how economical is it to build, fix, or enhance?
-- **Portability**: how economical will it be to port or reuse elsewhere?
-- **Localisability**: how economical will it be to adapt for other locales?
+Do not paraphrase from memory.
 
 ---
 
 ## STEP 2 — Reason Through Bug-Prone Areas Using HTSM
 
-Before writing the predictions list, silently reason through **all seven Product Elements** below using their full HTSM descriptions. For each element, identify where bugs are most likely to emerge given the specific feature context. Use this reasoning to inform which predictions to generate and how to prioritise them.
+Before writing the predictions list, read `.github/htsm/product-elements.md` in full. Silently reason through **all seven Product Elements** using their HTSM descriptions. For each element, identify where bugs are most likely to emerge given the specific feature context. Use this reasoning to inform which predictions to generate and how to prioritise them.
+
+Apply the following bug-prone lenses to each element (in addition to the canonical definitions in the reference file):
 
 ---
 
@@ -321,7 +214,7 @@ For the top 5 predictions, briefly note what a tester would need to observe to *
 
 ## STEP 7 — Chain Output
 
-Always close your response with the following block **exactly as formatted**. This block is machine-readable and is designed to be passed directly into `/test-ideas` or `/api-testing` via `#file:`. Do not omit any field — write `unknown` if a value was not provided.
+Always close your response with the following block **exactly as formatted**. This block is machine-readable and is designed to be passed directly into `/test-ideas` or `/api-testing` (via `#file:` in Copilot, or `@path` / file path argument in Claude Code). Do not omit any field — write `unknown` if a value was not provided.
 
 ~~~
 <!-- CHAIN OUTPUT

@@ -9,13 +9,13 @@ The output document must be clean, structured, and scannable. It is intended to 
 
 ## CRITICAL RULE — READ FILES BEFORE ASKING ANYTHING
 
-**You must read all referenced files before asking any questions. If the user provides one or more files via `#file:`, process all of them first, extract all CHAIN OUTPUT blocks, and only then ask about what is genuinely missing. Do not ask questions that are already answered in the session files.**
+**You must read all referenced files before asking any questions.** If the user provides one or more files (`#file:` in Copilot, `@path` or file path arguments in Claude Code), process all of them first, extract all CHAIN OUTPUT blocks, and only then ask about what is genuinely missing. Do not ask questions that are already answered in the session files.
 
 ---
 
 ## STEP 1 — Read All Upstream Session Files
 
-When the user provides files via `#file:`, process each one as follows:
+When the user provides files (`#file:` in Copilot, `@path` or file path arguments in Claude Code), process each one as follows:
 
 1. **Scan for `<!-- CHAIN OUTPUT` blocks** in each file. A single session file may contain output from one tool. Multiple files may be passed together covering the full chain.
 
@@ -59,7 +59,7 @@ If all of the above are already clear from the files, skip this step entirely an
 
 ## STEP 3 — Identify Relevant Product Elements and Quality Criteria
 
-Before writing the report, silently determine which Product Elements and Quality Criteria are *actually relevant* to what was tested. Do not list all seven elements or all ten criteria — only those that appeared in the session findings.
+Before writing the report, read `.github/htsm/product-elements.md` and `.github/htsm/quality-criteria.md` to interpret finding labels. Silently determine which Product Elements and Quality Criteria are *actually relevant* to what was tested. Do not list all seven elements or all ten criteria — only those that appeared in the session findings.
 
 **Relevant Product Elements** = any element that appears in a `criterion`, `element`, or `htsm_area` field across all extracted risks, bugs, and tests.
 
